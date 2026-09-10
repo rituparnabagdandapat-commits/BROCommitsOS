@@ -1,20 +1,4 @@
 name: Build BroOS
-
-on: [push]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: sudo apt-get install -y nasm
-      - run: nasm -f bin boot.asm -o BroOS.img || nasm -f bin bootloader.asm -o BroOS.img || echo "no boot file found"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: BroOS
-          path: BroOS.img
-          
-name: Build BroOS
 on: [push]
 jobs:
   build:
