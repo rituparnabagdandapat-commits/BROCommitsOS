@@ -14,3 +14,24 @@ jobs:
           name: BroOS
           path: BroOS.img
           
+name: Build BroOS
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install nasm
+        run: sudo apt-get install -y nasm
+      - name: List files
+        run: ls -R
+      - name: Build whatever asm exists
+        run: |
+          for f in *.asm *.s */*.asm; do [ -f "$f" ] && echo "Building $f" && nasm -f bin "$f" -o BroOS.img && break; done
+          ls -lh
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: BroOS-Image
+          path: BroOS.img
+          if-no-files-found: warn
