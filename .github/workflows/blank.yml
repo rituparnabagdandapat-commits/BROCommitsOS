@@ -1,33 +1,16 @@
 name: Build BroOS
 on: [push]
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install NASM
-        run: sudo apt-get update && sudo apt-get install -y nasm
-
-      - name: Find and Build
-        run: |
-          echo "=== FILES IN REPO ==="
+      - run: sudo apt-get install -y nasm
+      - run: |
           ls -la
-          echo "=== RECURSIVE ==="
-          find. -type f -name "*.asm" -o -name "*.s" -o -name "*.S" | head -20
-          echo "=== TRYING TO BUILD ==="
-          FILE=$(find. -type f -name "*.asm" | head -n 1)
-          if [ -z "$FILE" ]; then
-            echo "No asm file found!"
-            exit 1
-          fi
-          echo "Building $FILE"
-          nasm -f bin "$FILE" -o BroOS.img
-          ls -lh BroOS.img
-
-      - name: Upload BroOS Image
-        uses: actions/upload-artifact@v4
+          nasm -f bin boot.asm -o BroOS.img
+          ls -lh
+      - uses: actions/upload-artifact@v4
         with:
-          name: BroOS-v1-Bootable
+          name: BroOS-V2
           path: BroOS.img
