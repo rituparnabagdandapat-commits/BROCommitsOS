@@ -1,118 +1,26 @@
-name: Build BroOS v2 Desktop
-on: [push]
+name: Build BroOS
+
+on:
+  push:
+    branches: [ main ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
       - name: Install tools
-        run: sudo apt-get update && sudo apt-get install -y nasm grub-pc-bin xorriso mtools
-      - name: Build BroOS v2
+        run: sudo apt-get update && sudo apt-get install -y nasm qemu-system-x86
+      
+      - name: Build BroOS
         run: |
-          cat > kernel.asm <<'KASM'
-          section.multiboot
-          align 4
-              dd 0x1BADB002
-              dd 0
-              dd -0x1BADB002
-          section.text
-          global _start
-          _start:
-              mov esp, 0x90000
-              ; Clear screen with BLUE background 0x1F
-              mov edi, 0xB8000
-              mov ecx, 80*25
-              mov ax, 0x1F20
-              rep stosw
-
-              ; Print title at top center
-              mov esi, title
-              mov edi, 0xB8000 + 2*80*2 + 20*2
-              mov ah, 0x1E
-              call print
-
-              ; Print box
-              mov esi, line1
-              mov edi, 0xB8000 + 2*80*5 + 10*2
-              mov ah, 0x1F
-              call print
-              mov esi, line2
-              mov edi, 0xB8000 + 2*80*6 + 10*2
-              call print
-              mov esi, line3
-              mov edi, 0xB8000 + 2*80*7 + 10*2
-              call print
-              mov esi, line4
-              mov edi, 0xB8000 + 2*80*8 + 10*2
-              call print
-
-              ; Print jackpot message
-              mov esi, msg
-              mov edi, 0xB8000 + 2*80*12 + 10*2
-              mov ah, 0x1A
-              call print
-
-              ; Taskbar at bottom - green
-              mov edi, 0xB8000 + 2*80*24
-              mov ecx, 80
-              mov ax, 0x2F20
-              rep stosw
-              mov esi, taskbar
-              mov edi, 0xB8000 + 2*80*24 + 2*2
-              mov ah, 0x2F
-              call print
-
-              mov esi, hint
-              mov edi, 0xB8000 + 2*80*22 + 10*2
-              mov ah, 0x1F
-              call print
-
-          halt_loop:
-              cli
-              hlt
-              jmp halt_loop
-
-          print:
-              pusha
-         .loop:
-              lodsb
-              cmp al, 0
-              je.done
-              stosw
-              jmp.loop
-         .done:
-              popa
-              ret
-
-          section.rodata
-          title db "========== BROS OS v2.0 - DESKTOP ==========", 0
-          line1 db " +--------------------------------------+", 0
-          line2 db " | [>] My Computer [F] Files |", 0
-          line3 db " | [C] CMD Terminal [J] Jackpot |", 0
-          line4 db " +--------------------------------------+", 0
-          msg db ">>> JACKPOT!!! By Rituparna yeah yeah yeah!!! <<<", 0
-          taskbar db " START | BroOS | 12:00 PM | JACKPOT EDITION ", 0
-          hint db "Welcome to BroOS Desktop! This is your OS!", 0
-          KASM
-
-          cat > linker.ld <<'LLD'
-          ENTRY(_start)
-          SECTIONS {. = 1M;.text : { *(.multiboot) *(.text) }.rodata : { *(.rodata) }.bss : { *(.bss) } }
-          LLD
-
-          cat > grub.cfg <<'GCFG'
-          set timeout=0
-          set default=0
-          menuentry "BroOS v2" { multiboot /boot/kernel.bin boot }
-          GCFG
-
-          nasm -f elf32 kernel.asm -o kernel.o
-          ld -m elf_i386 -T linker.ld -o kernel.bin kernel.o
-          mkdir -p iso/boot/grub
-          mv kernel.bin iso/boot/
-          mv grub.cfg iso/boot/grub/
-          grub-mkrescue -o BroOS-v2.iso iso
-      - uses: actions/upload-artifact@v4
+          nasm -f bin boot.asm -o BroOS.img
+          ls -lh
+      
+      - name: Upload BroOS image
+        uses: actions/upload-artifact@v4
         with:
-          name: BroOS-v2-ISO
-          path: BroOS-v2.iso
+          name: BroOS-boot-image
+          path: BroOS.img
