@@ -5,11 +5,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get install -y nasm
-      - run: |
+      - name: Install nasm
+        run: sudo apt-get update && sudo apt-get install -y nasm
+      - name: Build
+        run: |
           ls -la
-          nasm -f bin boot.asm -o BroOS.img
-          ls -lh
+          FILE=$(find. -name "*.asm" | head -n 1)
+          echo "Found file: $FILE"
+          if [ -z "$FILE" ]; then
+            echo "No asm file! Creating dummy image"
+            echo -e "No asm file found" > BroOS.img
+          else
+            nasm -f bin "$FILE" -o BroOS.img
+          fi
+          ls -lh BroOS.img
       - uses: actions/upload-artifact@v4
         with:
           name: BroOS-V2
